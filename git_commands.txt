@@ -25,3 +25,5 @@ use this command: git commit -m(-m means comment)
 git add -A
 14. to commit more files the command: git commit -a -m
 15. git log command will give u information about all your activities
+16. use git push origin master command to get all your local rep files
+to githup repository
