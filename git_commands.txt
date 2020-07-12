@@ -21,3 +21,6 @@ becomes part of git if you don't commit them.
 to git index. command- git add filename
 12. after adding file to index you can then commit to git repo.
 use this command: git commit -m(-m means comment)
+13. to add more files to the index b4 commiting, use this command:
+git add -A
+14. to commit more files the command: git commit -a -m
