@@ -1,0 +1,23 @@
+Git/GitHub commands
+
+Git confinguration process
+1.create github account and create a repository
+2.copy github repository url "https://github.com/yaw4testing/emmasTrainings.git"
+3.install git on your local system and create local git folder
+4.open the local folder and right click inside and select git bash
+5.git command line will pub and u make the folder a git repo
+	by entering- git init command
+6. integrate git local with github
+7. enter this command: git remote add origin "url copied in activity 2"
+8. test the integration by pulling a file from github to local git directory
+8. enter command: git pull origin master (master is main folder in github)
+	to complete activity 8
+9. NOte: you don't modify file in githb directly. You can only 
+	modify files like readme files but not jar or .exe files
+10. git status command: will let u know which files are commited to git
+	this is cos files in the local git rep does not autmatically
+becomes part of git if you don't commit them.
+11. b4 commiting files into git repo, you first have to add files
+to git index. command- git add filename
+12. after adding file to index you can then commit to git repo.
+use this command: git commit -m(-m means comment)
