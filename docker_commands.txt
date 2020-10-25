@@ -1,0 +1,32 @@
+##docker commands
+
+docker --version
+docker run (#container name)
+docker images (list all images)
+docker rmi (#image name) --this removes a particular image
+docker ps -- shows all containers running and ps -a shows all containers
+docker run -d --runs containers in the backgroud
+docker exec -- runs specified commands in a container
+docker run -it -- runs in interactive mode and in terminal mode
+docker stop -- stops a container
+docker start --starts a container
+docker stop $(docker ps -aq) --stops all containers
+docker rm $(docker ps -aq) --removes all containers
+docker rmi $(docker images -aq) --removes all images
+docker pull (image name like ubuntu, alpine) pulls images from docker hub to docker local host
+docker image ls --digests - shows images and the encryption keys with image IDs
+docker system info -- shows the system information of the docker host
+docker history -- shows you the dockerfile configurations used to buil layers of an image
+docker inspect container [container name]
+docker volume ls -- list all volumes 
+docker container run -d --name -p -v volume-name:/volumepath
+##--this command below do a docker mount
+docker container run -d --name -p -v $(pwd):/working directory in dockerfile
+docker network --help #
+
+Note: inpulling image from docker registery/hub or any other registery like google, the full syntax is
+docker pull image docker.io/repo/image or tag (eg docker pull image docker.io/redis(ie is the repo):4.0.0)
+clearer terms: docker pull image docker.io/redis:4.0.0 or default = latest
+
+note: when image is pulled from a registery or hub (where images are stored), it pulls two things (manfest and layers)
+
