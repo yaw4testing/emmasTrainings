@@ -30,3 +30,4 @@ clearer terms: docker pull image docker.io/redis:4.0.0 or default = latest
 
 note: when image is pulled from a registery or hub (where images are stored), it pulls two things (manfest and layers)
 
+docker swamp init
