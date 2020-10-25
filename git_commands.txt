@@ -27,3 +27,4 @@ git add -A
 15. git log command will give u information about all your activities
 16. use git push origin master command to get all your local rep files
 to githup repository
+##good to understand git and github
