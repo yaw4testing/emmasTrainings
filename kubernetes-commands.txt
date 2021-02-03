@@ -1,0 +1,30 @@
+### Kubernets commands
+
+##finding keys and values in writing yaml files
+kubectl explain kind --for general
+##the . notation can also be used and a particular resources to get a
+particular key. eg deployment.spec.template.spec.volume
+kubectl explain deployment
+kubectl explain services
+kubectle explain pods
+
+##the watch command helps u to see whats going on with an activity
+kubectl get pods -w
+
+##commands generate kubernetes resources in yaml
+kubectl create service nodeport myweb--tcp=8888:3200 --dry-run=client -o yaml
+
+kubectl create deployment myweb --image=nginx --dry-run=client -o yaml
+
+kubectl create pods myweb --image=nginx --dry-run=client -o yaml
+
+kubectl create secret generic mongodb --dry-run=client -o yaml
+
+##connecting to cloud cluster from local station
+first create a yaml file and paste the configuration settings from the cloud
+use the command: export KUBECONFIG=the file name.yaml
+then u are connected to the cloud cluster
+
+##viewing kubernetes configuration file
+kubectl config view
+

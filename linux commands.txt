@@ -1,0 +1,28 @@
+##removing directory and its subdirectories with files in them
+rm -r directory name
+
+##creating base 64 encryption key
+echo -n "string" | base64
+
+## how to search for apps in linux
+sudo apt-cache search app-name
+
+##checking firewall status
+sudo ufw status
+##allowing port
+sudo ufw allow port-num/tcp or udp
+##u can use ufw --help to get more options
+
+##to check ports 
+ sudo netstat -tulpn
+##to check ports being listened
+ sudo netstat -tulpn | grep LISTEN
+
+##allowing port range
+sudo ufw allow 30000:60000/tcp or udp
+
+##adding user to group
+sudo usermod -a -G docker jenkins  #docker is the group and jenkins is the user
+##adding user
+adduser username ## better than using (useradd)
+

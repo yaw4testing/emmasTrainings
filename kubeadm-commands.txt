@@ -1,0 +1,175 @@
+### setting up kubernetes cluster step by step
+--firstly get all networking issues sorted out
+
+##Verify the MAC address and product_uuid are unique for every node
+ip link or ifconfig -a
+/sys/class/dmi/id/product_uuid
+
+##Letting iptables see bridged traffic
+Make sure that the br_netfilter module is loaded. 
+This can be done by running lsmod | grep br_netfilter.
+ To load it explicitly call sudo modprobe br_netfilter.
+
+As a requirement for your Linux Node's iptables to correctly
+ see bridged traffic, you should ensure net.bridge.bridge-nf-call-iptables is set to 1 
+in your sysctl config, e.g.
+
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+sudo sysctl --system
+
+
+##Control-plane node(s)
+Protocol	Direction	Port Range	Purpose	Used By
+TCP	Inbound	6443*	Kubernetes API server	All
+TCP	Inbound	2379-2380	etcd server client API	kube-apiserver, etcd
+TCP	Inbound	10250	Kubelet API	Self, Control plane
+TCP	Inbound	10251	kube-scheduler	Self
+TCP	Inbound	10252	kube-controller-manager	Self
+
+Worker node(s) 
+Protocol	Direction	Port Range	Purpose	Used By
+TCP	Inbound	10250	Kubelet API	Self, Control plane
+TCP	Inbound	30000-32767	NodePort Services†	All
+
+#first run apt-get update on ubuntu
+sudo su
+apt-get update
+
+
+#Turn off Swap space
+sudo swapoff -a
+nano /etc/fstab
+then comment the last bit with swap info
+
+#update the hosts file
+nano /etc/hosts
+
+##install network tools
+sudo apt-get install net-tools
+
+#set static ip address
+nano /etc/netplan/yamil-file
+--add the following lines
+# Let NetworkManager manage all devices on this system
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+      ens33:
+        dhcp4: no
+        addresses: [192.168.245.137/24]
+        gateway4: 192.168.245.2
+        nameservers:
+                   addresses: [192.168.245.2,8.8.8.8]
+
+
+##edit the hosts file (/etc/hosts)
+127.0.0.1       localhost
+127.0.1.1       worker-3
+127.0.0.1       worker-3
+10.244.0.4 worker-3
+
+10.244.0.3 loadbal
+10.244.0.1 master-1
+10.244.0.5 worker-4
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+#install OpenSSh Server
+sudo apt-get install openssh-server
+
+##install docker 
+sudo su
+apt-get update
+apt-get install -y docker.io
+
+#Note: always check for the versions of kubeadm,kubelet and kubectl.
+#they should much or the API version should be higher the rest
+
+## run these command to begin install all packages for kubernetes
+sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+
+##we should always change the docker cgroupdriver to systemd
+##cgroupdriver is deprecated
+# Set up the Docker daemon
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+
+##Restarting the kubelet is required:
+systemctl daemon-reload
+systemctl restart kubelet
+
+#edit kubeadm.config file to include the following
+nano /etc/systemd/system/kubelt.service.d/10-kubeadm.conf
+#Add this to the last envronmentfile line
+Environment="cgroup-driver=systemd/cgroup-driver=cgroupfs"
+
+#initialize kubernetes clusters
+#for starting a Calico CNI: 192.168.0.0/16 or starting Flannel
+CNI: 10.244.0.0/16
+kubeadm init --pod-network-cidr=192.168.0.0/16 \
+--apiserver-advertise-address=192.168.245.137 (master address)
+
+#run the following commands as root user
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+#for creating a POD based Calico
+#prefered:
+kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+and 
+kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+##confirm calico is working with this command
+watch kubectl get pods -n calico-system
+
+#instead of:
+kubectl apply -f https://docs.projectcalico.org/v3.0/getting-started/kubernetes/installation/hosted/kubeadm/1.7/calico.yaml
+
+#remove taint from master so pods could be scheduled on it
+kubectl taint nodes --all node-role.kubernetes.io/master-
+
+
+#this create kubernetes dashboard 
+##u have to create your own yaml file and copy the contents of the below url into it
+ https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml
+then kubectl apply -f dasboard.yaml
+
+#start the dashboard with the this command
+kubectl proxy
+
+#we create a dashboard service account
+kubectl create serviceaccount dashboard -n default
+
+#Add cluster binding rules for your roles on dashboard
+kubectl create clusterrolebinding dashboard-admin -n default \
+--clusterrole=cluster-admin \
+--serviceaccount=default:dashboard
+
+#get the secret key to be pasted into the dashboard token password 
+kubectl get secret $(kubectl get serviceaccount dashboard -o jsonpath="{.secrets[0].name}") -o jsonpath="{.data.token}" | base64 --decode
+#to access the dashboard on the browser use this url
+http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login

@@ -22,7 +22,17 @@ docker volume ls -- list all volumes
 docker container run -d --name -p -v volume-name:/volumepath
 ##--this command below do a docker mount
 docker container run -d --name -p -v $(pwd):/working directory in dockerfile
+example mounting working directory to nginx image: 
+doker run --name web -d -p 8080:80 -v $(pwd):/usr/share/nginx/html:ro
+#sharing data among containers via volumes(volumes allows sharing of datat)
+docker run -d --name web-copy -p 8081:80 --volumes-from web(container name to share data)
+(this option allows us to share data btw two or more containers)
+
 docker network --help #
+##this format docker output
+Docker PS Format command--> docker ps --format="ID\\t{{.ID}}\nName\\t{{.Names}}\nImage\\t{{.Image}}\nPorts\\t{{.Ports}}\nCommand\\t{{.Command}}\nCreated\\t{{.CreatedAt}}\nStatus\\t{{.Status}}\n”
+##you can store in a variable 
+export format=$(kkd)
 
 Note: inpulling image from docker registery/hub or any other registery like google, the full syntax is
 docker pull image docker.io/repo/image or tag (eg docker pull image docker.io/redis(ie is the repo):4.0.0)
@@ -31,3 +41,7 @@ clearer terms: docker pull image docker.io/redis:4.0.0 or default = latest
 note: when image is pulled from a registery or hub (where images are stored), it pulls two things (manfest and layers)
 
 docker swamp init
+##how inspect the ip address of a container
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' container_name_or_i
+or 
+docker inspect --format '{{ .NetworkSettings.IPAddress }}' container-id or name

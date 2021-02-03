@@ -1,0 +1,277 @@
+FROM jenkins/jenkins
+
+ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
+
+ARG GIT_COMMIT=unspecified
+LABEL git_commit=$GIT_COMMIT
+# Run this command to find git commit:-
+#docker inspect quay.io/shazchaudhry/docker-jenkins | jq '.[].ContainerConfig.Labels'
+
+# Configure Jenkins
+COPY config/*.xml $JENKINS_HOME/
+COPY config/*.groovy /usr/share/jenkins/ref/init.groovy.d/
+
+# Once jenkins is running and configured, run the following command to find the list of plugins installed:
+##  curl -s -k "http://admin:admin@localhost:8080/pluginManager/api/json?depth=1" | jq -r '.plugins[].shortName' | tee plugins.txt
+RUN /usr/local/bin/install-plugins.sh \
+  ace-editor \
+  ant \
+  antisamy-markup-formatter \
+  authentication-tokens \
+	blueocean \
+  blueocean-autofavorite \
+  blueocean-commons \
+  blueocean-config \
+  blueocean-dashboard \
+  blueocean-display-url \
+  blueocean-events \
+  blueocean-github-pipeline \
+  blueocean-git-pipeline \
+  blueocean-i18n \
+  blueocean-jwt \
+  blueocean-personalization \
+  blueocean-pipeline-api-impl \
+  blueocean-pipeline-editor \
+  blueocean-pipeline-scm-api \
+  blueocean-rest \
+  blueocean-rest-impl \
+  blueocean-web \
+  bouncycastle-api \
+  branch-api \
+  build-timeout \
+  cloudbees-folder \
+  credentials \
+  credentials-binding \
+  display-url-api \
+  docker-commons \
+  docker-workflow \
+  durable-task \
+  email-ext \
+  external-monitor-job \
+  favorite \
+  git \
+  git-client \
+  github \
+  github-api \
+  github-branch-source \
+  gitlab-plugin \
+  git-server \
+  global-build-stats \
+  gradle \
+  handlebars \
+  icon-shim \
+  jackson2-api \
+  jquery-detached \
+  junit \
+  keycloak \
+  ldap \
+  mailer \
+  mapdb-api \
+  matrix-auth \
+  matrix-project \
+  metrics \
+  momentjs \
+  pam-auth \
+  pipeline-build-step \
+  pipeline-github-lib \
+  pipeline-graph-analysis \
+  pipeline-input-step \
+  pipeline-milestone-step \
+  pipeline-model-api \
+  pipeline-model-declarative-agent \
+  pipeline-model-definition \
+  pipeline-model-extensions \
+  pipeline-rest-api \
+  pipeline-stage-step \
+  pipeline-stage-tags-metadata \
+  pipeline-stage-view \
+  plain-credentials \
+  pubsub-light \
+  purge-job-history \
+  resource-disposer \
+  role-strategy \
+  scm-api \
+  script-security \
+  sse-gateway \
+  ssh-credentials \
+  ssh-slaves \
+  structs \
+  subversion \
+  timestamper \
+  token-macro \
+  variant \
+  windows-slaves \
+  workflow-aggregator \
+  workflow-api \
+  workflow-basic-steps \
+  workflow-cps \
+  workflow-cps-global-lib \
+  workflow-durable-task-step \
+  workflow-job \
+  workflow-multibranch \
+  workflow-scm-step \
+  workflow-step-api \
+  workflow-support \
+  ws-cleanup
+
+USER root
+
+# Install Docker from official repo
+RUN apt-get update && \
+    apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && \
+    apt-key fingerprint 0EBFCD88 && \
+    add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable" && \
+   apt-get update
+   sudo apt-get install docker-ce docker-ce-cli containerd.io && \
+   usermod -aG docker jenkins && \
+   chown -R jenkins:jenkins $JENKINS_HOME/
+
+RUN docker run hello-world
+
+
+USER jenkins
+
+VOLUME [$JENKINS_HOME, "/var/run/docker.sock"]
+
+
+
+
+###another way
+FROM jenkins/jenkins
+USER root
+
+ARG DOCKER_CLIENT=docker-17.06.2-ce.tgz 
+
+RUN cd /tmp \
+     && curl -sSL -O https://download.docker.com/linux/static/stable/x86_64/${DOCKER_CLIENT} 104 \
+     && tar zxf ${DOCKER_CLIENT} \
+     && mkdir -p /usr/local/bin \
+     && mv ./docker/docker /usr/local/bin \
+     && chmod +x /usr/local/bin/docker \
+     && rm -rf /tmp/*
+
+user jenkins
+
+##from jenkins site
+FROM jenkins/jenkins:2.263.2-lts-jdk11
+USER root
+RUN apt-get update && apt-get install -y apt-transport-https \
+       ca-certificates curl gnupg2 \
+       software-properties-common
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+RUN apt-key fingerprint 0EBFCD88
+RUN add-apt-repository \
+       "deb [arch=amd64] https://download.docker.com/linux/debian \
+       $(lsb_release -cs) stable"
+RUN apt-get update && apt-get install -y docker-ce-cli
+USER jenkins
+RUN jenkins-plugin-cli --plugins blueocean:1.24.4
+
+##docker in docker
+
+
+Open up a terminal window.
+
+Create a bridge network in Docker using the following docker network create command:
+
+docker network create jenkins
+
+In order to execute Docker commands inside Jenkins nodes, download and run the docker:dind Docker image using the following link:https://docs.docker.com/engine/reference/run/ [docker run] command:
+
+docker run \
+  --name jenkins-docker \
+  --rm \
+  --detach \
+  --privileged \
+  --network jenkins \
+  --network-alias docker \
+  --env DOCKER_TLS_CERTDIR=/certs \
+  --volume jenkins-docker-certs:/certs/client \
+  --volume jenkins-data:/var/jenkins_home \
+  --publish 2376:2376 \
+  docker:dind
+
+	( Optional ) Specifies the Docker container name to use for running the image. By default, Docker will generate a unique name for the container.
+	( Optional ) Automatically removes the Docker container (the instance of the Docker image) when it is shut down.
+	( Optional ) Runs the Docker container in the background. This instance can be stopped later by running docker stop jenkins-docker.
+	Running Docker in Docker currently requires privileged access to function properly. This requirement may be relaxed with newer Linux kernel versions.
+	This corresponds with the network created in the earlier step.
+	Makes the Docker in Docker container available as the hostname docker within the jenkins network.
+	Enables the use of TLS in the Docker server. Due to the use of a privileged container, this is recommended, though it requires the use of the shared volume described below. This environment variable controls the root directory where Docker TLS certificates are managed.
+	Maps the /certs/client directory inside the container to a Docker volume named jenkins-docker-certs as created above.
+	Maps the /var/jenkins_home directory inside the container to the Docker volume named jenkins-data. This will allow for other Docker containers controlled by this Docker container’s Docker daemon to mount data from Jenkins.
+	( Optional ) Exposes the Docker daemon port on the host machine. This is useful for executing docker commands on the host machine to control this inner Docker daemon.
+	The docker:dind image itself. This image can be downloaded before running by using the command: docker image pull docker:dind.
+
+Note: If copying and pasting the command snippet above does not work, try copying and pasting this annotation-free version here:
+
+docker run --name jenkins-docker --rm --detach \
+  --privileged --network jenkins --network-alias docker \
+  --env DOCKER_TLS_CERTDIR=/certs \
+  --volume jenkins-docker-certs:/certs/client \
+  --volume jenkins-data:/var/jenkins_home \
+  --publish 2376:2376 docker:dind
+
+Customise official Jenkins Docker image, by executing below two steps:
+
+    Create Dockerfile with the following content:
+
+    FROM jenkins/jenkins:2.263.2-lts-jdk11
+    USER root
+    RUN apt-get update && apt-get install -y apt-transport-https \
+           ca-certificates curl gnupg2 \
+           software-properties-common
+    RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+    RUN apt-key fingerprint 0EBFCD88
+    RUN add-apt-repository \
+           "deb [arch=amd64] https://download.docker.com/linux/debian \
+           $(lsb_release -cs) stable"
+    RUN apt-get update && apt-get install -y docker-ce-cli
+    USER jenkins
+    RUN jenkins-plugin-cli --plugins blueocean:1.24.4
+
+    Build a new docker image from this Dockerfile and assign the image a meaningful name, e.g. "myjenkins-blueocean:1.1":
+
+    docker build -t myjenkins-blueocean:1.1 .
+
+    Keep in mind that the process described above will automatically download the official Jenkins Docker image if this hasn’t been done before.
+
+Run your own myjenkins-blueocean:1.1 image as a container in Docker using the following docker run command:
+
+docker run \
+  --name jenkins\
+  --rm \
+  --detach \
+  --network jenkins \
+  --env DOCKER_HOST=tcp://docker:2376 \
+  --env DOCKER_CERT_PATH=/certs/client \
+  --env DOCKER_TLS_VERIFY=1 \
+  --publish 8888:8080 \
+  --publish 50000:50000 \
+  --volume jenkins-data:/var/jenkins_home \
+  --volume jenkins-docker-certs:/certs/client:ro \
+  myjenk 
+
+	( Optional ) Specifies the Docker container name for this instance of the Docker image.
+	( Optional ) Automatically removes the Docker container when it is shut down.
+	( Optional ) Runs the current container in the background (i.e. "detached" mode) and outputs the container ID. If you do not specify this option, then the running Docker log for this container is output in the terminal window.
+	Connects this container to the jenkins network defined in the earlier step. This makes the Docker daemon from the previous step available to this Jenkins container through the hostname docker.
+	Specifies the environment variables used by docker, docker-compose, and other Docker tools to connect to the Docker daemon from the previous step.
+	Maps (i.e. "publishes") port 8080 of the current container to port 8080 on the host machine. The first number represents the port on the host while the last represents the container’s port. Therefore, if you specified -p 49000:8080 for this option, you would be accessing Jenkins on your host machine through port 49000.
+	( Optional ) Maps port 50000 of the current container to port 50000 on the host machine. This is only necessary if you have set up one or more inbound Jenkins agents on other machines, which in turn interact with your jenkins-blueocean container (the Jenkins "controller"). Inbound Jenkins agents communicate with the Jenkins controller through TCP port 50000 by default. You can change this port number on your Jenkins controller through the Configure Global Security page. If you were to change the TCP port for inbound Jenkins agents of your Jenkins controller to 51000 (for example), then you would need to re-run Jenkins (via this docker run …​ command) and specify this "publish" option with something like --publish 52000:51000, where the last value matches this changed value on the Jenkins controller and the first value is the port number on the machine hosting the Jenkins controller. Inbound Jenkins agents communicate with the Jenkins controller on that port (52000 in this example). Note that WebSocket agents do not need this configuration.
+	Maps the /var/jenkins_home directory in the container to the Docker volume with the name jenkins-data. Instead of mapping the /var/jenkins_home directory to a Docker volume, you could also map this directory to one on your machine’s local file system. For example, specifying the option
+--volume $HOME/jenkins:/var/jenkins_home would map the container’s /var/jenkins_home directory to the jenkins subdirectory within the $HOME directory on your local machine, which would typically be /Users/<your-username>/jenkins or /home/<your-username>/jenkins. Note that if you change the source volume or directory for this, the volume from the docker:dind container above needs to be updated to match this.
+	Maps the /certs/client directory to the previously created jenkins-docker-certs volume. This makes the client TLS certificates needed to connect to the Docker daemon available in the path specified by the DOCKER_CERT_PATH environment variable.
+	The name of the Docker image, which you built in the previous step.
+
+
+
