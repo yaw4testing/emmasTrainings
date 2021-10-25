@@ -1,4 +1,4 @@
-### Kubernets commands
+njj### Kubernets commands
 
 ##finding keys and values in writing yaml files
 kubectl explain kind --for general
@@ -27,4 +27,27 @@ then u are connected to the cloud cluster
 
 ##viewing kubernetes configuration file
 kubectl config view
+
+##creating services
+kubectl expose deployment/nameOfDepl --type="NodePort/LoadBalancer/ExternalName
+--port 8080
+##to have information about a resource in kubernetes
+kubectl describe pod/deployment/services/configmap/secrets/persistantVolume
++11:23 08/06/2021r
+##perfoming a rolling update to update your apps in a production environment
+kubectl set image deployment/<deployment-name> <deployment-name>=<new image name>
+
+##udoing rolling updates in the event of a failure
+kubectl rollout undo deployment/<deployment-name>
+
+##how to effect changes to your kubernetes deployments
+kubectl replace --force -f kubernetes.yaml
+
+#using the wait command to check if service is ready
+kubectl wait --for-condition=ready pod -l app=lableName
+when u see the output conditon met then service is ready
+
+##connecting to aws cluster created with aws console
+aws eks --region eu-west-2 update-kubeconfig --name <cluster-name>
+
 
