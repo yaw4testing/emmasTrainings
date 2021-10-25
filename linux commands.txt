@@ -1,5 +1,5 @@
 ##removing directory and its subdirectories with files in them
-rm -r directory name
+rm -r directory name or rmdir
 
 ##creating base 64 encryption key
 echo -n "string" | base64
@@ -13,8 +13,8 @@ sudo ufw status
 sudo ufw allow port-num/tcp or udp
 ##u can use ufw --help to get more options
 
-##to check ports 
- sudo netstat -tulpn
+##to check network connection and configuration
+ sudo netstat -itulpn (
 ##to check ports being listened
  sudo netstat -tulpn | grep LISTEN
 
@@ -22,7 +22,180 @@ sudo ufw allow port-num/tcp or udp
 sudo ufw allow 30000:60000/tcp or udp
 
 ##adding user to group
+-- create group commdand: sudo groupadd docker(group name)
 sudo usermod -a -G docker jenkins  #docker is the group and jenkins is the user
+--note: after adding a user to a group u always make sure u stop, restart and start services
+--sudo systemctl daemon-reload
+--sudo service docker stop and start
 ##adding user
 adduser username ## better than using (useradd)
+##to know the list of users 
+cat /etc/passwd
+##changing owniership to a folder
+sudo chown username: myfolder
+##giving user permission to a folder
+sudo chmod username+wx myfolder
 
+##creating ssh keys
+ssh-keygen
+##then copy the sha file in id_rsa.pub to the authorized_kes file in the host machine
+##if you want to add known_host file for jenkins master to connect to slave
+ssh-keyscan -H slave ip >>/var/lib/jenkins/.ssh/known_hosts
+chown jenkins:jenkins /var/lib/jenkins/.ssh/known_hosts
+chmod 700 /var/lib/jenkins/.ssh/known_hosts
+##then you copy the public key (id_rsa.pub) into the known_hosts file
+##if you ain't able to connenct via usernam@ip, use the following
+~/.ssh/id_rsa username@ip or hostname
+##when u can't connect to a remote via ssh, sometimes it might be that 
+#authorized_keys don't exit on the remote hosts. 
+create athorized_keys file the remote host in .ssh/ folder and
+use ssh-copy-id -i ~/.ssh/id_rsa.pub <user-id>@<x-host>
+##using keypairs like AWS.pem
+ssh -i /home/yaw/desktop/aws-keypair.pen user@ip
+##to copy a file to a remote machine via ssh, use (scp which stands for secure copy)
+scp filename user@ip:/home/user(the absolote path of the destination)
+scp yaw@master-1:/home/yaw/Desktop/aws-practice.pem /home/yaw/Desktop/
+
+
+##to install software repositories in linux use this
+sudo add-apt-repository universe
+sudo add-apt-repository multiverse
+sudo apt-get update
+
+##bash
+--to excute bash commands in a script use
+#!/bin/bash
+--to make file excutable use
+chmod +x filename then excute with ./filename
+--another way of executing bash script of file is 
+bash filename (eg bash kwaku.sh)
+
+##networking and systems administration
+pstree -np #shows system processes and their Id
+ps -aux #shows which processes are running
+man # information about a command or object
+## importance of systemd
+systemd is responsible for initializing and controlling all resources on the system
+## when changes are made to UNIT files (holds information about behaviour and 
+configuration of system resources) systemd needs to know. the commands are:
+## systemctl is used to control systemd daemon (more like cli for systemd)
+systemctl reload-daemon
+systemctl restart, other commands are
+systemctl show service name (eg httpd.service or docker.service). shows all
+configguration setting of the service. Attributes like memorylimit can be edited
+with --sudo vi /etc/systemd/system/httpd.service
+systemctl status
+systemctl start (other are enable, disable, stop)
+##cgroups or control groups orgernizes process on the system
+systemd-ctgls ##shows all the process organize by cgroups
+##in order to have logging information about systemd (all resources run by systemd)
+systemd-journal
+journalctl # is the cli tool use to run systemd logs
+##to get informatio about systemd-journal use
+man systemd.journal-fields
+
+##if you don't want to be specifying the file sources for ubuntu packages then
+sudo apt-get install software-properties-common
+
+##networking commands
+--ip addr #shows ip address information
+--ping -c 1 ipaddress # send a single ping request to the destination
+--TTL or time to live prevents packet looping in our routes. ie, when a packet is sent
+and it doesn't find its destination route, time to live would report error and this prevents
+continous looping of packets which takes bandwith 
+--MTU the Maximum Transmission Unit (maximum number of bytes that can be
+transmitted in layer2)
+## VLANS is used to partition layer2 segment into separate logical networks.
+this is done to segregate network traffic or for network security
+--ip route and route -n shows routes on our routing table
+--ip route add 92.168.1.1 via 192.168.2.1 dev ens33 #this add a static route to the host 192.168.1.1
+##checking network bandwith
+iftop -display bandwidth usage on an interface by host
+--eg iftop -h localhost -i(interface) ens33
+##cpu architecture and topology
+lscpu command - displays information about your cpu architecture
+lsmem command - displays memory information
+/proc/meminfo - displays information about your memory
+/proc/cpuinfo - displays information abt your cpu
+top command - displays cpu and running process information
+free -g or k command - displays memomry size, used, available and swap info 
+locale -displays information about your local setteing (lang, keyboard, etc)
+localectl - allows you to configure your local settings
+df - reports the amount of disk space used and available on file
+systems. eg df -ht ext4
+##how to mount on linux 
+sudo mount /dev/deviceName(what u want to mount) /var/directoryToMountON(or destination directory)
+##listing all your hardware 
+lshw
+lsblk
+dmesg
+lsmod - displays kernel modules about devices (eg lsmod | grep sound
+uname - display kernel version
+modprobe - installs kernel model for a device (eg modeprobe soundcore)
+
+## working with files 
+touch filename -creates an empty file
+../ - means the directory above the current folder
+eg. /home/user/data/newdat/file.sh
+../file.sh -means the file.sh in /newdata whose parent is /data
+eg. /home/user/data/newdata ~ mv file* ../ . - this means vove all files in 
+directory /data to the current directory /newdata
+
+##searching for a file or a directory
+locate then directory or file name
+##to update the search index so you can find newly created files or directories,
+sudo apdatedb
+##to print or output content of directory page by page for easy readability,
+less filename
+| (pipe command) will redirect command to another command
+eg cat ./filename-contents | grep ubuntu (the grep command will filter
+the file contents and print only text containing ubuntu)
+>> - ridirection command: this will apend contents or add to contents
+eg cat filename-contents | grep >> newfile - this will append the contents
+of filename-contents to newfile. 
+> - ridirection command: this will replace the contents of the existing file
+##standard streams (input/outputs)
+stdin <0 filename- means taking input from the keyboard
+stdout 1> filename (or just >) - redirect to a file
+stderr 2> filename- redirect output error to a file (note: we use 2> 
+for stderr without it, it would be just standard output/stdout
+##head and tail commmands
+head filename - would display olny the first 10 lines
+tail filename - would display only the last 10 lines
+cut -d: -f(field 1,2,3,4....) | sort -n(ascending) -rn(reverse order) 
+
+##archiving your files
+tar -xzf filene.tar.gz (x: extracting, z:compressing, f:filename)
+tar -czf nameofthearchive.tar.gz nameofthedirectorytoarchive (c: for creating an archive)
+unzip command- this also unzip files.zip
+zip command - zip files (eg u can zip the contents of a current directory 
+with zip zipname .*)
+##displaying the contents of directory
+dir
+ls -alt (a: all including hidden files or directories, l: long output, t:chronological order)
+
+##Disk partitioning and extending partition
+sudo fdisk /dev/sda
+p - to show how your partition looks
+d - to delete partition
+n - create partition
+w - save changes
+
+##users and groups commands
+id username - prints information about the given user, or the process running it
+if no user is specified
+who -prints information about users who are currently logged on.
+w -Show who is logged on and what they are doing
+last - show a listing of last logged in users
+/etc/shadow - displays password about users
+/etc/passwd 
+/etc/group - 
+##users and group permissions
+read, write, execute permissions have the following values
+read - 4
+write - 2
+execute - 1
+no permission - o
+when three digits (777) are used: the first digit rep user, second digit
+rep group and last digit rep others (u+g+o)
+eg chmod -r+w+x
