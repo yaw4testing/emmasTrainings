@@ -199,3 +199,8 @@ no permission - o
 when three digits (777) are used: the first digit rep user, second digit
 rep group and last digit rep others (u+g+o)
 eg chmod -r+w+x
+##installing jenkins on linux
+wget -q -O - https://jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -
+sudo sh -c 'echo deb http://pkg.jenkins-ci.org/debian binary/ > /etc/apt/sources.list.d/jenkins.list'
+sudo apt update
+sudo apt-get install jenkins
