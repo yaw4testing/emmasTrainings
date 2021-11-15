@@ -50,4 +50,9 @@ when u see the output conditon met then service is ready
 ##connecting to aws cluster created with aws console
 aws eks --region eu-west-2 update-kubeconfig --name <cluster-name>
 
+##if you want to change context use the folllowing
+kubectl config view 
+kubectl config set-context --kubeconfig=customed-config-file
+
+
 
